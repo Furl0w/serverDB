@@ -1,0 +1,29 @@
+version: "3"
+
+services:
+  serverdb:
+    build: .
+    ports:
+      - "3031:3031"
+    environment:
+      port: "3031"
+      dbPort: "27017"
+      hostName: "mongo"
+    networks:
+      - general
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:latest
+    networks:
+      - general
+    volumes:
+      - mongoData:/var/lib/mongodb
+
+
+networks:
+  general:
+
+volumes:
+  mongoData:
