@@ -14,6 +14,12 @@ import (
 const dbName = "drawConnect"
 const collectionName = "user"
 
+//User define the user model from the database
+type User struct {
+	ID   primitive.ObjectID `json:"id" bson:"_id"`
+	Name string             `json:"name" bson:"name"`
+}
+
 //InitDB initialize the mongo client to the host and the port specified
 func InitDB(hostName string, dbPort string) (*mongo.Client, error) {
 
@@ -35,7 +41,7 @@ func PingDBClient(client *mongo.Client) error {
 }
 
 //RetrieveUserByID return the user identified by the id or an empty array if none was found
-func RetrieveUserByID(client *mongo.Client, id string) ([]primitive.M, error) {
+func RetrieveUserByID(client *mongo.Client, id string) ([]User, error) {
 
 	userCollection := client.Database(dbName).Collection(collectionName)
 	objectID, err := primitive.ObjectIDFromHex(id)
@@ -47,15 +53,22 @@ func RetrieveUserByID(client *mongo.Client, id string) ([]primitive.M, error) {
 }
 
 //RetrieveUserByName return the user identified by his name or an empty array if none was found
-func RetrieveUserByName(client *mongo.Client, name string) ([]primitive.M, error) {
+func RetrieveUserByName(client *mongo.Client, name string) ([]User, error) {
 
 	userCollection := client.Database(dbName).Collection(collectionName)
 	filter := bson.M{"name": name}
-	return getResultsFind(filter, userCollection)
+	user, err := getResultsFind(filter, userCollection)
+	if err != nil {
+		return nil, err
+	}
+	if len(user) > 1 {
+		return nil, errors.New("More than one user found")
+	}
+	return user, nil
 }
 
 //RetrieveUsers return all the users in the collection
-func RetrieveUsers(client *mongo.Client) ([]primitive.M, error) {
+func RetrieveUsers(client *mongo.Client) ([]User, error) {
 
 	userCollection := client.Database(dbName).Collection(collectionName)
 	filter := bson.M{}
@@ -83,7 +96,7 @@ func InsertUser(client *mongo.Client, name string) (string, error) {
 	return "", errors.New("no id returned")
 }
 
-func getResultsFind(filter bson.M, collection *mongo.Collection) ([]primitive.M, error) {
+func getResultsFind(filter bson.M, collection *mongo.Collection) ([]User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cur, err := collection.Find(ctx, filter)
@@ -91,9 +104,9 @@ func getResultsFind(filter bson.M, collection *mongo.Collection) ([]primitive.M,
 		return nil, err
 	}
 	defer cur.Close(ctx)
-	results := make([]primitive.M, 0)
+	results := make([]User, 0)
 	for cur.Next(ctx) {
-		var result bson.M
+		var result User
 		err := cur.Decode(&result)
 		if err != nil {
 			return nil, err

@@ -19,7 +19,7 @@ services:
     networks:
       - general
     volumes:
-      - mongoData:/var/lib/mongodb
+      - mongoData:/data/db
 
 
 networks:
