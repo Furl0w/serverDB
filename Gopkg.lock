@@ -14,6 +14,18 @@
   revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
 
 [[projects]]
+  name = "github.com/gorilla/context"
+  packages = ["."]
+  revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
+  version = "v1.1.1"
+
+[[projects]]
+  name = "github.com/gorilla/mux"
+  packages = ["."]
+  revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
+  version = "v1.6.2"
+
+[[projects]]
   name = "github.com/mongodb/mongo-go-driver"
   packages = [
     "bson",
@@ -90,6 +102,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c922cf63544928d93aafb211464b1fdbe09f2e0e77183fe951f8d87d1de26c04"
+  inputs-digest = "1e367015f471454d8a46433db60c0aaa0c5a665173747b85f32a40bbc7b8e550"
   solver-name = "gps-cdcl"
   solver-version = 1
