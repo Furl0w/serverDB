@@ -47,7 +47,8 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", pingDB).Methods("GET")
 	r.HandleFunc("/users", getUsers).Methods("GET")
-	r.HandleFunc("/user/{id}", getUser).Methods("GET")
+	r.HandleFunc("/user", getUserByName).Methods("GET")
+	r.HandleFunc("/user/{id}", getUserByID).Methods("GET")
 	r.HandleFunc("/user", createUser).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":"+port, r))
@@ -55,11 +56,10 @@ func main() {
 
 func pingDB(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Fprintf(w, "Initiating connection with DB\n")
 	err := db.PingDBClient(client)
 	if err != nil {
 		w.WriteHeader(500)
-		log.Print(err.Error())
+		log.Println(err.Error())
 		fmt.Fprintf(w, "Failed to connect to DB")
 		return
 	}
@@ -81,7 +81,7 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "error when marshalling json\n")
-		log.Print(err.Error())
+		log.Println(err.Error())
 		return
 	}
 	w.Header().Add("Content-Type", "application/json")
@@ -90,14 +90,44 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func getUser(w http.ResponseWriter, r *http.Request) {
+func getUserByID(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
 	results, err := db.RetrieveUserByID(client, params["id"])
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "error when finding stuff\n")
-		log.Print(err.Error())
+		log.Println(err.Error())
+		return
+	}
+	jsonString, err := json.Marshal(results)
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "error when marshalling json\n")
+		log.Println(err.Error())
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "%s", jsonString)
+	return
+}
+
+func getUserByName(w http.ResponseWriter, r *http.Request) {
+
+	keys, ok := r.URL.Query()["name"]
+
+	if !ok || len(keys[0]) < 1 {
+		log.Println("Url Param 'name' is missing")
+		w.WriteHeader(400)
+		fmt.Fprint(w, "no name provided\n")
+		return
+	}
+	results, err := db.RetrieveUserByName(client, keys[0])
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "error when finding stuff\n")
+		log.Println(err.Error())
 		return
 	}
 	jsonString, err := json.Marshal(results)
@@ -120,21 +150,21 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "error when receiving stuff\n")
-		log.Print(err.Error())
+		log.Println(err.Error())
 		return
 	}
 	err = json.Unmarshal(body, &userRequest)
 	if err != nil {
-		w.WriteHeader(403)
+		w.WriteHeader(400)
 		fmt.Fprintf(w, "error when unmarshalling json\n")
-		log.Print(err.Error())
+		log.Println(err.Error())
 		return
 	}
 	id, err := db.InsertUser(client, userRequest.Name)
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "error when inserting stuff\n")
-		log.Print(err.Error())
+		log.Println(err.Error())
 		return
 	}
 	w.Header().Set("Content-type", "application/json;charset=UTF-8")

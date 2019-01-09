@@ -11,6 +11,9 @@ import (
 	"github.com/mongodb/mongo-go-driver/mongo/readpref"
 )
 
+const dbName = "drawConnect"
+const collectionName = "user"
+
 //InitDB initialize the mongo client to the host and the port specified
 func InitDB(hostName string, dbPort string) (*mongo.Client, error) {
 
@@ -34,7 +37,7 @@ func PingDBClient(client *mongo.Client) error {
 //RetrieveUserByID return the user identified by the id or an empty array if none was found
 func RetrieveUserByID(client *mongo.Client, id string) ([]primitive.M, error) {
 
-	userCollection := client.Database("drawConnect").Collection("user")
+	userCollection := client.Database(dbName).Collection(collectionName)
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
@@ -43,10 +46,18 @@ func RetrieveUserByID(client *mongo.Client, id string) ([]primitive.M, error) {
 	return getResultsFind(filter, userCollection)
 }
 
+//RetrieveUserByName return the user identified by his name or an empty array if none was found
+func RetrieveUserByName(client *mongo.Client, name string) ([]primitive.M, error) {
+
+	userCollection := client.Database(dbName).Collection(collectionName)
+	filter := bson.M{"name": name}
+	return getResultsFind(filter, userCollection)
+}
+
 //RetrieveUsers return all the users in the collection
 func RetrieveUsers(client *mongo.Client) ([]primitive.M, error) {
 
-	userCollection := client.Database("drawConnect").Collection("user")
+	userCollection := client.Database(dbName).Collection(collectionName)
 	filter := bson.M{}
 	return getResultsFind(filter, userCollection)
 }
@@ -54,7 +65,7 @@ func RetrieveUsers(client *mongo.Client) ([]primitive.M, error) {
 //InsertUser create a new document in the collection user with the attribute name set to the parameter provided
 func InsertUser(client *mongo.Client, name string) (string, error) {
 
-	userCollection := client.Database("drawConnect").Collection("user")
+	userCollection := client.Database(dbName).Collection(collectionName)
 	user := bson.M{"name": name}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
