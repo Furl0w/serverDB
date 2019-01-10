@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -47,8 +48,8 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", pingDB).Methods("GET")
 	r.HandleFunc("/users", getUsers).Methods("GET")
-	r.HandleFunc("/user", getUserByName).Methods("GET")
-	r.HandleFunc("/user/{id}", getUserByID).Methods("GET")
+	r.HandleFunc("/user/name/{name}", getUserByName).Methods("GET")
+	r.HandleFunc("/user/id/{id}", getUserByID).Methods("GET")
 	r.HandleFunc("/user", createUser).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":"+port, r))
@@ -93,6 +94,11 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 func getUserByID(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
+	if _, ok := params["id"]; !ok {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "error with parameters\n")
+		log.Println(errors.New("no id provided"))
+	}
 	results, err := db.RetrieveUserByID(client, params["id"])
 	if err != nil {
 		w.WriteHeader(500)
@@ -115,15 +121,13 @@ func getUserByID(w http.ResponseWriter, r *http.Request) {
 
 func getUserByName(w http.ResponseWriter, r *http.Request) {
 
-	keys, ok := r.URL.Query()["name"]
-
-	if !ok || len(keys[0]) < 1 {
-		log.Println("Url Param 'name' is missing")
-		w.WriteHeader(400)
-		fmt.Fprint(w, "no name provided\n")
-		return
+	params := mux.Vars(r)
+	if _, ok := params["name"]; !ok {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "error with parameters\n")
+		log.Println(errors.New("no name provided"))
 	}
-	results, err := db.RetrieveUserByName(client, keys[0])
+	results, err := db.RetrieveUserByName(client, params["name"])
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "error when finding stuff\n")
