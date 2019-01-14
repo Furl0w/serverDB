@@ -19,7 +19,8 @@ import (
 var client *mongo.Client
 
 type creationRequest struct {
-	Name string `json:"name,omitempty"`
+	Email      string         `json:"email,omitempty"`
+	Signatures []db.Signature `json:"signatures"`
 }
 
 type successInsert struct {
@@ -48,7 +49,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", pingDB).Methods("GET")
 	r.HandleFunc("/users", getUsers).Methods("GET")
-	r.HandleFunc("/user/name/{name}", getUserByName).Methods("GET")
+	r.HandleFunc("/user/email/{email}", getUserByEmail).Methods("GET")
 	r.HandleFunc("/user/id/{id}", getUserByID).Methods("GET")
 	r.HandleFunc("/user", createUser).Methods("POST")
 
@@ -119,15 +120,15 @@ func getUserByID(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func getUserByName(w http.ResponseWriter, r *http.Request) {
+func getUserByEmail(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
-	if _, ok := params["name"]; !ok {
+	if _, ok := params["email"]; !ok {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "error with parameters\n")
-		log.Println(errors.New("no name provided"))
+		log.Println(errors.New("no email provided"))
 	}
-	results, err := db.RetrieveUserByName(client, params["name"])
+	results, err := db.RetrieveUserByEmail(client, params["email"])
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "error when finding stuff\n")
@@ -164,20 +165,26 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		log.Println(err.Error())
 		return
 	}
-	id, err := db.InsertUser(client, userRequest.Name)
+	id, err := db.InsertUser(client, userRequest.Email, userRequest.Signatures)
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "error when inserting stuff\n")
 		log.Println(err.Error())
 		return
 	}
-	w.Header().Set("Content-type", "application/json;charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
 	id = strings.TrimFunc(id, func(r rune) bool {
 		return r == '"' || unicode.IsSpace(r)
 	})
 	res := successInsert{ID: id}
 	json, err := json.Marshal(res)
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "error when formatting json\n")
+		log.Println(err.Error())
+		return
+	}
+	w.Header().Set("Content-type", "application/json;charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, string(json))
 	return
 }

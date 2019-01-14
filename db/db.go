@@ -12,12 +12,21 @@ import (
 )
 
 const dbName = "drawConnect"
-const collectionName = "user"
+const collectionName = "users"
 
 //User define the user model from the database
 type User struct {
-	ID   primitive.ObjectID `json:"id" bson:"_id"`
-	Name string             `json:"name" bson:"name"`
+	ID         primitive.ObjectID `json:"id" bson:"_id"`
+	Email      string             `json:"email" bson:"email"`
+	Signatures []Signature        `json:"signatures" bson:"signatures"`
+	Token      string             `json:"token" bson:"token"`
+}
+
+//Signature define the signature model received from the phone of the user
+type Signature struct {
+	Abs  []int `json:"abs" bson:"abs"`
+	Ord  []int `json:"ord" bson:"ord"`
+	Time []int `json:"time" bson:"time"`
 }
 
 //InitDB initialize the mongo client to the host and the port specified
@@ -52,11 +61,11 @@ func RetrieveUserByID(client *mongo.Client, id string) ([]User, error) {
 	return getResultsFind(filter, userCollection)
 }
 
-//RetrieveUserByName return the user identified by his name or an empty array if none was found
-func RetrieveUserByName(client *mongo.Client, name string) ([]User, error) {
+//RetrieveUserByEmail return the user identified by his email or an empty array if none was found
+func RetrieveUserByEmail(client *mongo.Client, email string) ([]User, error) {
 
 	userCollection := client.Database(dbName).Collection(collectionName)
-	filter := bson.M{"name": name}
+	filter := bson.M{"email": email}
 	user, err := getResultsFind(filter, userCollection)
 	if err != nil {
 		return nil, err
@@ -75,11 +84,11 @@ func RetrieveUsers(client *mongo.Client) ([]User, error) {
 	return getResultsFind(filter, userCollection)
 }
 
-//InsertUser create a new document in the collection user with the attribute name set to the parameter provided
-func InsertUser(client *mongo.Client, name string) (string, error) {
+//InsertUser create a new document in the collection user with the attribute email set to the parameter provided
+func InsertUser(client *mongo.Client, email string, signatures []Signature) (string, error) {
 
 	userCollection := client.Database(dbName).Collection(collectionName)
-	user := bson.M{"name": name}
+	user := bson.M{"email": email, "signatures": signatures}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	res, err := userCollection.InsertOne(ctx, user)
