@@ -12,4 +12,5 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -tags netgo -ldflags '-w' 
 FROM scratch
 
 COPY --from=builder /go/src/serverMongoDB/app/serverDB /app/serverDB
+COPY app/localhost.pem app/localhost-key.pem /app/
 CMD ["/app/serverDB"]

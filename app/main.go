@@ -53,7 +53,7 @@ func main() {
 	r.HandleFunc("/user/id/{id}", getUserByID).Methods("GET")
 	r.HandleFunc("/user", createUser).Methods("POST")
 
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	http.ListenAndServeTLS(":"+port, "/app/localhost.pem", "/app/localhost-key.pem", r)
 }
 
 func pingDB(w http.ResponseWriter, r *http.Request) {
