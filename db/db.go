@@ -85,10 +85,10 @@ func RetrieveUsers(client *mongo.Client) ([]User, error) {
 }
 
 //InsertUser create a new document in the collection user with the attribute email set to the parameter provided
-func InsertUser(client *mongo.Client, email string, signatures []Signature) (string, error) {
+func InsertUser(client *mongo.Client, email string, signatures []Signature, token string) (string, error) {
 
 	userCollection := client.Database(dbName).Collection(collectionName)
-	user := bson.M{"email": email, "signatures": signatures}
+	user := bson.M{"email": email, "signatures": signatures, "token": token}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	res, err := userCollection.InsertOne(ctx, user)

@@ -21,6 +21,7 @@ var client *mongo.Client
 type creationRequest struct {
 	Email      string         `json:"email,omitempty"`
 	Signatures []db.Signature `json:"signatures"`
+	Token      string         `json:"token,omitempty"`
 }
 
 type successInsert struct {
@@ -53,7 +54,7 @@ func main() {
 	r.HandleFunc("/user/id/{id}", getUserByID).Methods("GET")
 	r.HandleFunc("/user", createUser).Methods("POST")
 
-	http.ListenAndServeTLS(":"+port, "/app/localhost.pem", "/app/localhost-key.pem", r)
+	http.ListenAndServe(":"+port, r)
 }
 
 func pingDB(w http.ResponseWriter, r *http.Request) {
@@ -165,7 +166,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		log.Println(err.Error())
 		return
 	}
-	id, err := db.InsertUser(client, userRequest.Email, userRequest.Signatures)
+	id, err := db.InsertUser(client, userRequest.Email, userRequest.Signatures, userRequest.Token)
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "error when inserting stuff\n")
